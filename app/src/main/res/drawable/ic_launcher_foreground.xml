@@ -1,0 +1,24 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <!-- light on the floor -->
+    <path android:pathData="M24,84a30,7 0,1 0,60 0a30,7 0,1 0,-60 0z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="radial" android:centerX="54" android:centerY="84" android:gradientRadius="30"
+                android:startColor="#88E8C27A" android:endColor="#00E8C27A" />
+        </aapt:attr>
+    </path>
+    <!-- stone frame -->
+    <path android:fillColor="#FF6A6676" android:pathData="M31,84V50a23,23 0,0 1,46 0v34z" />
+    <!-- the world behind: a dawn city -->
+    <path android:pathData="M36,84V50a18,18 0,0 1,36 0v34z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="54" android:startY="32" android:endX="54" android:endY="84"
+                android:startColor="#FF3B2470" android:centerColor="#FFC8735A" android:endColor="#FFF3B26B" />
+        </aapt:attr>
+    </path>
+    <path android:fillColor="#FFFFE4AA" android:pathData="M48,66a6,6 0,1 1,12 0a6,6 0,1 1,-12 0z" />
+    <path android:fillColor="#FF252A52" android:pathData="M36,84V72h5v-5h4v8h5v-4h5v13z M58,84V69h4v-6h4v9h6v12z" />
+    <!-- rim of light -->
+    <path android:strokeColor="#FFE8C27A" android:strokeWidth="1.6" android:fillColor="#00000000" android:pathData="M36,84V50a18,18 0,0 1,36 0v34" />
+</vector>
