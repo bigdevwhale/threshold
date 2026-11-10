@@ -10,11 +10,14 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import app.threshold.MainActivity
 import app.threshold.R
+import app.threshold.data.Event
+import app.threshold.data.Kind
 import app.threshold.data.Step
 
 object Notify {
     const val CH_RING = "ring"
     const val CH_DAY = "day"
+    const val CH_EVENT = "event"
     const val ID_RING = 1
     const val ID_EVENING = 2
     const val ID_NEXT = 3
@@ -27,6 +30,10 @@ object Notify {
             setSound(null, null); enableVibration(false); setBypassDnd(true); lockscreenVisibility = Notification.VISIBILITY_PUBLIC
         })
         nm.createNotificationChannel(NotificationChannel(CH_DAY, ctx.getString(R.string.ch_day), NotificationManager.IMPORTANCE_DEFAULT))
+        // The day's events: heads-up, with the phone's notification sound.
+        nm.createNotificationChannel(NotificationChannel(CH_EVENT, ctx.getString(R.string.ch_event), NotificationManager.IMPORTANCE_HIGH).apply {
+            lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+        })
     }
 
     private fun home(ctx: Context): PendingIntent =
@@ -102,4 +109,25 @@ object Notify {
         NotificationCompat.Builder(ctx, CH_DAY).setSmallIcon(R.drawable.ic_stat)
             .setContentTitle(ctx.getString(R.string.n_nudge)).setContentText(ctx.getString(R.string.n_nudge_b))
             .setPriority(NotificationCompat.PRIORITY_HIGH).setAutoCancel(true).setContentIntent(home(ctx)).build())
+
+    /** Each event has its own notification, so two at the same time don't replace each other. */
+    fun eventId(e: Event): Int = 1000 + Math.floorMod(e.id, 1_000_000L).toInt()
+
+    /** An event of the day is due: a tap opens it; a radio is already playing. */
+    fun event(ctx: Context, e: Event, time: String) {
+        val st = e.step
+        val code = eventId(e)
+        val open = Launch.intent(ctx, st)?.let { PendingIntent.getActivity(ctx, code, it, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE) }
+        post(ctx, code, NotificationCompat.Builder(ctx, CH_EVENT).setSmallIcon(R.drawable.ic_stat)
+            .setContentTitle("$time · ${st.label}")
+            .setContentText(ctx.getString(if (st.kind == Kind.RADIO) R.string.n_event_radio else R.string.n_event_b))
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setAutoCancel(true)
+            .setTimeoutAfter(3 * 60 * 60_000L)
+            .setContentIntent(open ?: home(ctx))
+            .apply { if (open != null) addAction(0, ctx.getString(R.string.a_open), open) }
+            .build())
+    }
 }

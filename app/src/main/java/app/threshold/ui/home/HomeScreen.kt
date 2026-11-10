@@ -47,6 +47,7 @@ import app.threshold.ui.Btn
 import app.threshold.ui.Card
 import app.threshold.ui.Fmt
 import app.threshold.ui.HoldButton
+import app.threshold.ui.Label
 import app.threshold.ui.Meter
 import app.threshold.ui.Nav
 import app.threshold.ui.Overlay
@@ -167,6 +168,24 @@ fun HomeScreen(s: State, nav: Nav, nowIn: Long?) {
             }
             skipped.firstOrNull()?.let { d ->
                 Btn(stringResource(R.string.home_unskip, Fmt.near(ctx, d, today)), Modifier.weight(1f)) { c.write { skip(d, false) } }
+            }
+        }
+        // The rest of today: the events still to come, a tap opens one now.
+        val later = Week.upcoming(s, now, 6).filter { it.day == today }
+        if (later.isNotEmpty()) {
+            Label(stringResource(R.string.home_later))
+            Card {
+                later.forEachIndexed { k, d ->
+                    Row(Modifier.fillMaxWidth().clickable {
+                        if (d.event.step.kind == app.threshold.data.Kind.RADIO) RingService.radio(ctx, d.event.step.url, d.event.step.label)
+                        else if (!app.threshold.alarm.Launch.open(ctx, d.event.step)) nav.toast(ctx.getString(R.string.toast_cant_open))
+                    }.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text(Fmt.hm(d.at), style = T.h3, modifier = Modifier.padding(end = 14.dp))
+                        GlyphIcon(Fmt.glyph(d.event.step), C.gold, Modifier.size(18.dp))
+                        Text(d.event.step.label, style = T.body, maxLines = 1, modifier = Modifier.padding(start = 10.dp).weight(1f))
+                    }
+                    if (k < later.size - 1) app.threshold.ui.Line()
+                }
             }
         }
         val sum = Journal.sum(s)

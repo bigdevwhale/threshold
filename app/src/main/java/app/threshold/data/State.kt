@@ -7,13 +7,16 @@ const val MIN = 60 * SEC
 const val HOUR = 60 * MIN
 const val DAY = 24 * HOUR
 
-/** What a step of the morning opens: another app, a link (in its app when there is one), or a radio stream played here. */
-enum class Kind { APP, LINK, RADIO }
+/**
+ * What a step opens: another app, a link (in its app when there is one), a radio stream played here,
+ * or an audio or video file from the phone (in the player Android picks).
+ */
+enum class Kind { APP, LINK, RADIO, FILE }
 
 data class Step(
     val kind: Kind,
     val label: String,
-    /** The app to open, or to open the link in; empty lets Android choose. */
+    /** The app to open, or to open the link in; empty lets Android choose. For a file, its type (audio/mpeg…). */
     val pkg: String = "",
     val url: String = "",
     /** How long this step lasts before the portal leads on to the next one (chains only). */
@@ -29,6 +32,21 @@ data class Day(
     val steps: List<Step> = emptyList(),
     /** Open the morning at once, with no circle and no tap: the phone only asks to be unlocked. */
     val auto: Boolean = false,
+    /** The world was chosen by hand: adding a step no longer guesses it. */
+    val picked: Boolean = false,
+)
+
+/**
+ * Something else the day holds, apart from the morning: at [h]:[m] on the [days] of the week (0 is Monday) a
+ * notification comes, and a tap opens the [step]. A radio step starts playing by itself.
+ */
+data class Event(
+    val id: Long,
+    val days: Set<Int>,
+    val h: Int,
+    val m: Int,
+    val step: Step,
+    val on: Boolean = true,
 )
 
 /** A morning that happened: how it went, for the journal. */
@@ -74,6 +92,8 @@ data class State(
     val nudgeMin: Int = 0,
     val wild: Boolean = false,
     val wishes: List<Step> = emptyList(),
+    /** The day's other events: the evening book, the workout, the film. */
+    val events: List<Event> = emptyList(),
     val visits: Map<World, Int> = emptyMap(),
     val finds: Map<String, Int> = emptyMap(),
     val log: List<Wake> = emptyList(),

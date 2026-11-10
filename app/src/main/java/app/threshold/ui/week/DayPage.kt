@@ -38,11 +38,13 @@ import app.threshold.R
 import app.threshold.alarm.Launch
 import app.threshold.container
 import app.threshold.data.Day
+import app.threshold.data.Event
 import app.threshold.data.Kind
 import app.threshold.data.State
 import app.threshold.data.Step
 import app.threshold.domain.Frames
 import app.threshold.domain.Portal
+import app.threshold.domain.Week
 import app.threshold.domain.World
 import app.threshold.ru
 import app.threshold.ui.Btn
@@ -61,6 +63,21 @@ import app.threshold.ui.theme.T
 /** What is being added to the morning. */
 enum class Adding { APP, LINK, RADIO }
 
+/** The add buttons: an app, a link, a radio station, a file from the phone. */
+@Composable
+fun AddRow(onAdd: (Adding) -> Unit, onFile: () -> Unit) {
+    Column(Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Btn(stringResource(R.string.k_app), Modifier.weight(1f), compact = true) { onAdd(Adding.APP) }
+            Btn(stringResource(R.string.k_link), Modifier.weight(1f), compact = true) { onAdd(Adding.LINK) }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Btn(stringResource(R.string.k_radio), Modifier.weight(1f), compact = true) { onAdd(Adding.RADIO) }
+            Btn(stringResource(R.string.k_file), Modifier.weight(1f), compact = true, onClick = onFile)
+        }
+    }
+}
+
 @Composable
 fun DayPage(s: State, i: Int, nav: Nav) {
     val ctx = LocalContext.current
@@ -70,8 +87,16 @@ fun DayPage(s: State, i: Int, nav: Nav) {
     var time by remember { mutableStateOf(false) }
     var adding by remember { mutableStateOf<Adding?>(null) }
     var editing by remember { mutableStateOf<Int?>(null) }
+    var event by remember { mutableStateOf<Event?>(null) }
     fun set(change: (Day) -> Day) = c.write { setDay(i, change) }
-    fun add(step: Step) = set { day -> day.copy(steps = day.steps + step, world = if (day.steps.isEmpty()) Portal.guess(step) else day.world) }
+    fun add(step: Step) = set { day -> Portal.place(day, step) }
+    // A file either joins the morning or takes the place of the step being edited.
+    var fileFor by remember { mutableStateOf<Int?>(null) }
+    val pickFile = rememberFilePicker { st ->
+        val k = fileFor
+        if (k == null) add(st) else set { it.copy(steps = it.steps.mapIndexed { j, x -> if (j == k) st.copy(minutes = x.minutes) else x }) }
+        fileFor = null
+    }
 
     Page(Fmt.dow(ctx, i), { nav.open(null) }) {
         PortalView(if (d.on) d.world else null, if (d.on) 1f else 0f, Frames.of(s.frame), Modifier.fillMaxWidth().height(200.dp), widthFrac = 0.4f)
@@ -106,16 +131,12 @@ fun DayPage(s: State, i: Int, nav: Nav) {
                     onMinutes = { m -> set { it.copy(steps = it.steps.mapIndexed { j, x -> if (j == k) x.copy(minutes = m) else x }) } },
                     onUp = { set { it.copy(steps = it.steps.toMutableList().apply { add(k - 1, removeAt(k)) }) } },
                     onDelete = { set { it.copy(steps = it.steps.filterIndexed { j, _ -> j != k }) } },
-                    onEdit = { editing = k },
+                    onEdit = { if (st.kind == Kind.FILE) { fileFor = k; pickFile() } else editing = k },
                 )
                 if (k < d.steps.size - 1) Text(stringResource(R.string.day_then, st.minutes), style = T.small.copy(color = C.gold), modifier = Modifier.padding(start = 14.dp, top = 4.dp, bottom = 6.dp))
             }
             Text(stringResource(R.string.day_add), style = T.sub, modifier = Modifier.padding(top = 10.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
-                Btn(stringResource(R.string.k_app), Modifier.weight(1.3f), compact = true) { adding = Adding.APP }
-                Btn(stringResource(R.string.k_link), Modifier.weight(1f), compact = true) { adding = Adding.LINK }
-                Btn(stringResource(R.string.k_radio), Modifier.weight(1f), compact = true) { adding = Adding.RADIO }
-            }
+            AddRow({ adding = it }) { fileFor = null; pickFile() }
             Text(stringResource(R.string.day_share_hint), style = T.small, modifier = Modifier.padding(top = 8.dp))
             d.steps.firstOrNull()?.takeIf { it.kind != Kind.RADIO }?.let { first ->
                 Spacer(Modifier.height(10.dp))
@@ -128,9 +149,21 @@ fun DayPage(s: State, i: Int, nav: Nav) {
             Text(stringResource(R.string.day_world_b), style = T.sub, modifier = Modifier.padding(bottom = 10.dp))
             World.chosen.chunked(2).forEach { row ->
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 8.dp)) {
-                    row.forEach { w -> WorldChip(w, w == d.world, ru, Modifier.weight(1f)) { set { it.copy(world = w) } } }
+                    row.forEach { w -> WorldChip(w, w == d.world, ru, Modifier.weight(1f)) { set { it.copy(world = w, picked = true) } } }
                 }
             }
+        }
+
+        // The rest of the day: the evening book, the workout, the film. They come whether the morning rings or not.
+        Label(stringResource(R.string.ev_title))
+        Text(stringResource(R.string.ev_b), style = T.sub, modifier = Modifier.padding(bottom = 10.dp))
+        Week.events(s, i).forEach { e ->
+            EventCard(e) { event = e }
+            Spacer(Modifier.height(8.dp))
+        }
+        Btn("+ " + stringResource(R.string.ev_add), Modifier.fillMaxWidth(), gold = s.events.none { i in it.days }) {
+            val next = (java.time.LocalTime.now().hour + 1) % 24
+            event = Event(0, setOf(i), next, 0, noStep)
         }
     }
     if (time) TimeDialog(d.h, d.m, { time = false }) { h, m -> set { it.copy(h = h, m = m) }; time = false }
@@ -147,8 +180,10 @@ fun DayPage(s: State, i: Int, nav: Nav) {
             Kind.LINK -> LinkPicker(st, { editing = null }) { new -> set { it.copy(steps = it.steps.mapIndexed { j, x -> if (j == k) new.copy(minutes = x.minutes) else x }) }; editing = null }
             Kind.RADIO -> RadioPicker({ editing = null }) { new -> set { it.copy(steps = it.steps.mapIndexed { j, x -> if (j == k) new.copy(minutes = x.minutes) else x }) }; editing = null }
             Kind.APP -> AppPicker({ editing = null }) { new -> set { it.copy(steps = it.steps.mapIndexed { j, x -> if (j == k) new.copy(minutes = x.minutes) else x }) }; editing = null }
+            Kind.FILE -> editing = null
         }
     }
+    event?.let { e -> EventPage(e, { event = null }, nav) }
 }
 
 @Composable
@@ -156,7 +191,7 @@ private fun StepCard(st: Step, k: Int, n: Int, onMinutes: (Int) -> Unit, onUp: (
     val ctx = LocalContext.current
     Card(Modifier.clickable(onClick = onEdit)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            GlyphIcon(when (st.kind) { Kind.APP -> Glyph.APP; Kind.LINK -> Glyph.LINK; Kind.RADIO -> Glyph.RADIO }, C.gold, Modifier.size(22.dp))
+            GlyphIcon(Fmt.glyph(st), C.gold, Modifier.size(22.dp))
             Column(Modifier.weight(1f).padding(start = 12.dp)) {
                 Text(st.label.ifBlank { Fmt.kind(ctx, st) }, style = T.body, maxLines = 2)
                 Text(Fmt.kind(ctx, st) + (st.url.takeIf { it.isNotBlank() }?.let { " · " + it.removePrefix("https://").removePrefix("http://").take(40) } ?: ""), style = T.small, maxLines = 1)
@@ -178,7 +213,7 @@ private fun StepCard(st: Step, k: Int, n: Int, onMinutes: (Int) -> Unit, onUp: (
 }
 
 @Composable
-private fun IconBtn(g: Glyph, onClick: () -> Unit) {
+internal fun IconBtn(g: Glyph, onClick: () -> Unit) {
     Box(Modifier.size(38.dp).clip(CircleShape).clickable(onClick = onClick), contentAlignment = Alignment.Center) { GlyphIcon(g, C.dim, Modifier.size(19.dp)) }
 }
 
@@ -200,7 +235,7 @@ fun WorldChip(w: World, selected: Boolean, ru: Boolean, modifier: Modifier = Mod
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TimeDialog(h: Int, m: Int, onClose: () -> Unit, onPick: (Int, Int) -> Unit) {
+internal fun TimeDialog(h: Int, m: Int, onClose: () -> Unit, onPick: (Int, Int) -> Unit) {
     val st = rememberTimePickerState(h, m, is24Hour = true)
     AlertDialog(
         onDismissRequest = onClose,

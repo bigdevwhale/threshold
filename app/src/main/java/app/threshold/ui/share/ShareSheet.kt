@@ -58,7 +58,7 @@ fun ShareSheet(s: State, text: String?, nav: Nav) {
         Spacer(Modifier.height(10.dp))
         s.week.forEachIndexed { i, d ->
             Row(Modifier.fillMaxWidth().clickable {
-                c.write { setDay(i) { day -> day.copy(on = true, steps = day.steps + step, world = if (day.steps.isEmpty()) Portal.guess(step) else day.world) } }
+                c.write { setDay(i) { day -> Portal.place(day, step).copy(on = true) } }
                 c.shared.value = null
                 nav.toast(ctx.getString(R.string.toast_added, Fmt.dow(ctx, i)))
             }.padding(vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {

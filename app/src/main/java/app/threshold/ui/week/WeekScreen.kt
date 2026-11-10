@@ -91,6 +91,10 @@ fun WeekScreen(s: State, nav: Nav, nowIn: Long?) {
                         else -> if (day == wild) stringResource(R.string.week_wild) else null
                     }
                     if (note != null && d.on) Text(note, style = T.small.copy(color = C.gold))
+                    val evs = Week.events(s, i).filter { it.on }
+                    // One event fits with its name; several, only their times.
+                    if (evs.isNotEmpty()) Text("+ " + if (evs.size == 1) "${Fmt.hm(evs[0].h, evs[0].m)} ${evs[0].step.label}" else evs.joinToString(", ") { Fmt.hm(it.h, it.m) },
+                        style = T.small.copy(color = C.dim), maxLines = 1)
                 }
             }
             Line()

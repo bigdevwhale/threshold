@@ -7,4 +7,15 @@
         <item name="colorPrimary">@color/gold</item>
         <item name="colorAccent">@color/gold</item>
     </style>
+
+    <style name="WidgetEvent">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:paddingTop">2dp</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:fontFamily">@font/inter_regular</item>
+        <item name="android:textColor">#ECE6F5</item>
+        <item name="android:textSize">13sp</item>
+    </style>
 </resources>

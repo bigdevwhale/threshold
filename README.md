@@ -30,11 +30,18 @@ Every day of the week has its own time and its own morning. What comes through:
 
 - **an app** – any installed one;
 - **a link** – a particular video, playlist, album or film, opened right in its own app: YouTube, Yandex Music, Spotify, Kinopoisk;
-- **the radio**, played by Threshold itself, so the station is the alarm sound.
+- **the radio**, played by Threshold itself, so the station is the alarm sound;
+- **a file** from the phone – a song, an audiobook, a workout video – opened in your player.
 
 Steps chain: fifteen minutes of exercise on YouTube, then the morning show. The easiest way to add a link: tap «Share» → Threshold in YouTube or Yandex Music and pick a day.
 
 Music starts by itself: Spotify playlists and Yandex Music albums open already playing, and a YouTube video starts with sound.
+
+## Through the day
+
+The morning isn't all a day holds. Add events at any time – the fasting app at six, yoga at seven in the evening, an audiobook before bed – on the days you choose. At the time a notification comes, and a tap opens the app, the link or the file; a radio starts playing by itself. Events come whatever the morning alarm is doing, on days off too.
+
+A home-screen widget shows the arch onto tomorrow's world, when it opens, and the events still ahead today.
 
 ## The portal
 

@@ -1,6 +1,7 @@
 package app.threshold.domain
 
 import app.threshold.data.Day
+import app.threshold.data.Event
 import app.threshold.data.State
 import java.time.DayOfWeek
 import java.time.Instant
@@ -13,6 +14,9 @@ enum class Off { DAY_OFF, HOLIDAY, VACATION, SKIP }
 
 /** The next time the portal opens. */
 data class Next(val at: Long, val day: Long, val wild: Boolean)
+
+/** An event of the day, on a particular date. */
+data class Due(val event: Event, val day: Long, val at: Long)
 
 object Week {
     fun zone(): ZoneId = ZoneId.systemDefault()
@@ -77,6 +81,22 @@ object Week {
             return Next(at, day, wildDay(s, day))
         }
         return null
+    }
+
+    /** The events of a day of the week ([dow], 0 is Monday), by time. */
+    fun events(s: State, dow: Int): List<Event> = s.events.filter { dow in it.days }.sortedWith(compareBy({ it.h }, { it.m }))
+
+    /**
+     * The events still to come from [now], soonest first, up to a week ahead. They live apart from the morning:
+     * a day off, a holiday or a vacation silences the alarm, not the evening book.
+     */
+    fun upcoming(s: State, now: Long, limit: Int = 50): List<Due> {
+        if (s.events.none { it.on }) return emptyList()
+        val today = epochDay(now)
+        return (0L..7L).asSequence().flatMap { i ->
+            val day = today + i
+            events(s, dow(day)).asSequence().filter { it.on }.map { Due(it, day, at(day, it.h, it.m)) }
+        }.filter { it.at > now }.take(limit).toList()
     }
 
     /** The bedtime nudge: eight and a half hours before the portal opens. */

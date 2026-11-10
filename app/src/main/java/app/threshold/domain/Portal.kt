@@ -1,5 +1,6 @@
 package app.threshold.domain
 
+import app.threshold.data.Day
 import app.threshold.data.HOUR
 import app.threshold.data.Kind
 import app.threshold.data.State
@@ -62,21 +63,32 @@ object Portal {
 
     fun frameOpen(s: State, f: Frame) = distinct(s) >= f.need
 
-    /** The world a step most likely belongs to, from where it leads. */
-    fun guess(step: Step): World {
+    /**
+     * The world a step most likely belongs to, from where it leads; null when nothing gives it away (a bare YouTube
+     * link can be news, yoga or an audiobook alike).
+     */
+    fun guess(step: Step): World? {
         if (step.kind == Kind.RADIO) return World.RADIO
         val text = (step.url + " " + step.pkg + " " + step.label).lowercase()
         fun has(vararg w: String) = w.any { it in text }
         return when {
             has("зарядк", "йог", "workout", "fitness", "yoga", "stretch", "растяжк", "тренир", "пилатес", "pilates") -> World.SPORT
+            has("podcast", "подкаст", "audiobook", "аудиокниг", "storytel", "litres", "литрес", "bookmate", "букмейт", "книг", "books.yandex") -> World.GARDEN
             has("новост", "news", "meduza", "rbc", "tass", "lenta", "дайджест", "digest") -> World.NEWS
-            has("kinopoisk", "кинопоиск", "ivi", "okko", "netflix", "kion", "wink", "start.ru", "кино", "film", "movie", "serial", "сериал") -> World.CINEMA
-            has("iptv", "tv", "тв", "radio", "радио", "эфир", "stream") -> World.RADIO
-            has("podcast", "подкаст", "audiobook", "аудиокниг", "storytel", "litres", "литрес", "bookmate", "букмейт", "книг") -> World.GARDEN
+            has("kinopoisk", "кинопоиск", "ivi.ru", "okko", "netflix", "kion", "wink.ru", "start.ru", "кино", "film", "movie", "serial", "сериал") -> World.CINEMA
+            has("iptv", "radio", "радио", "эфир") -> World.RADIO
             has("music", "музык", "spotify", "soundcloud", "zvuk", "deezer", "playlist", "плейлист") -> World.MUSIC
-            has("youtube", "youtu.be") -> World.NEWS
-            else -> World.MUSIC
+            else -> null
         }
+    }
+
+    /**
+     * [step] added to the morning of [day]. The first step chooses the world, unless the user already has: a world
+     * picked by hand stays.
+     */
+    fun place(day: Day, step: Step): Day {
+        val world = if (day.picked || day.steps.isNotEmpty()) day.world else guess(step) ?: day.world
+        return day.copy(steps = day.steps + step, world = world)
     }
 }
 

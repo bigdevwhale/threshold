@@ -69,6 +69,14 @@ class MainActivity : AppCompatActivity() {
             if (i.hasExtra("chainSec")) { Debug.chainSec = i.getIntExtra("chainSec", 0); return }
             if (i.hasExtra("openApp")) { app.threshold.alarm.Launch.open(this, app.threshold.data.Step(app.threshold.data.Kind.APP, "", i.getStringExtra("openApp").orEmpty())); return }
             if (i.getBooleanExtra("evening", false)) { app.threshold.alarm.Notify.evening(this); return }
+            // `--ez event true` adds an event for the coming minute, today, opening a YouTube search: tests the event alarm.
+            if (i.getBooleanExtra("event", false)) {
+                val t = java.time.LocalTime.now().plusMinutes(1)
+                val e = app.threshold.data.Event(System.currentTimeMillis(), setOf(java.time.LocalDate.now().dayOfWeek.value - 1), t.hour, t.minute,
+                    app.threshold.data.Step(app.threshold.data.Kind.LINK, "YouTube · Йога", "", "https://www.youtube.com/results?search_query=yoga"))
+                container.write { store.update { it.copy(events = it.events + e) } }
+                return
+            }
             if (i.hasExtra("next")) {
                 sendBroadcast(Intent(this, app.threshold.alarm.AlarmReceiver::class.java).setAction(app.threshold.alarm.Scheduler.NEXT)
                     .putExtra(app.threshold.alarm.Scheduler.EXTRA_INDEX, 1).putExtra(app.threshold.alarm.Scheduler.EXTRA_DAY, i.getLongExtra("next", -1)))

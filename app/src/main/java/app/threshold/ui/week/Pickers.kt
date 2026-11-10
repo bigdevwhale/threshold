@@ -146,6 +146,26 @@ fun LinkPicker(was: Step?, onClose: () -> Unit, onPick: (Step) -> Unit) {
 
 private fun appName(ctx: Context, pkg: String) = runCatching { ctx.packageManager.getApplicationLabel(ctx.packageManager.getApplicationInfo(pkg, 0)).toString() }.getOrDefault(pkg)
 
+/**
+ * A song, an audiobook or a workout video from the phone itself: Android's file picker, then the app keeps the right
+ * to read the file across restarts, so the morning can hand it to a player. Returns the call that opens the picker.
+ */
+@Composable
+fun rememberFilePicker(onPick: (Step) -> Unit): () -> Unit {
+    val ctx = LocalContext.current
+    val launcher = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        runCatching { ctx.contentResolver.takePersistableUriPermission(uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION) }
+        val name = runCatching {
+            ctx.contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c -> if (c.moveToFirst()) c.getString(0) else null }
+        }.getOrNull() ?: uri.lastPathSegment.orEmpty()
+        val type = runCatching { ctx.contentResolver.getType(uri) }.getOrNull().orEmpty()
+        // The name without its extension reads better: «Йога для начинающих», not «Йога для начинающих.mp4».
+        onPick(Step(Kind.FILE, name.substringBeforeLast('.').ifBlank { name }, type, uri.toString(), 15))
+    }
+    return { runCatching { launcher.launch(arrayOf("audio/*", "video/*")) } }
+}
+
 /** Stations that have been on the air for years; any other stream can be pasted. */
 private val stations = listOf(
     "Radio Swiss Jazz" to "https://stream.srg-ssr.ch/m/rsj/mp3_128",

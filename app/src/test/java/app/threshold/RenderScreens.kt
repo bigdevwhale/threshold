@@ -70,6 +70,11 @@ abstract class ScreensBase {
     @Test fun day() = screen("5-day", Tab.WEEK, Overlay.Day(2))
     @Test fun world() = screen("6-world", Tab.WORLDS, world = World.SPORT)
     @Test fun settings() = screen("7-settings", Tab.HOME, Overlay.Settings)
+    @Test fun event() {
+        val s = demo()
+        shot("11-event") { app.threshold.ui.week.EventPage(s.events.first(), {}, app.threshold.ui.Nav({}, {}, {})) }
+    }
+    @Test fun dayEvents() = screen("12-day-events", Tab.WEEK, Overlay.Day(6))
 
     private fun ringing(): State {
         val s = demo()

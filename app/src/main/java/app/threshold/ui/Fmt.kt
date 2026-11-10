@@ -48,5 +48,14 @@ object Fmt {
         Kind.APP -> ctx.getString(R.string.k_app)
         Kind.LINK -> ctx.getString(R.string.k_link)
         Kind.RADIO -> ctx.getString(R.string.k_radio)
+        Kind.FILE -> ctx.getString(R.string.k_file)
+    }
+
+    /** The icon of a step. */
+    fun glyph(s: Step): app.threshold.ui.art.Glyph = when (s.kind) {
+        Kind.APP -> app.threshold.ui.art.Glyph.APP
+        Kind.LINK -> app.threshold.ui.art.Glyph.LINK
+        Kind.RADIO -> app.threshold.ui.art.Glyph.RADIO
+        Kind.FILE -> app.threshold.ui.art.Glyph.FILE
     }
 }

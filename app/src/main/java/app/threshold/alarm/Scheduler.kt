@@ -17,6 +17,9 @@ object Scheduler {
     const val CLOSE = "app.threshold.CLOSE"
     const val NEXT = "app.threshold.NEXT"
     const val NUDGE = "app.threshold.NUDGE"
+    const val EVENT = "app.threshold.EVENT"
+    const val EXTRA_ID = "id"
+    const val EXTRA_AT = "at"
     const val EXTRA_DAY = "day"
     const val EXTRA_INDEX = "index"
 
@@ -53,6 +56,13 @@ object Scheduler {
         if (s.evening && next != null && bed != null && bed > now && Portal.charge(s.closedAt, next.at) == 0)
             am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, bed, eve)
         else am.cancel(eve)
+        // The next event of the day: one alarm at a time, the receiver sets the one after it.
+        val due = Week.upcoming(s, now, 1).firstOrNull()
+        val ev = pi(ctx, EVENT, 7) { if (due != null) { putExtra(EXTRA_ID, due.event.id); putExtra(EXTRA_AT, due.at) } }
+        if (due == null) am.cancel(ev)
+        else if (canExact(ctx)) am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, due.at, ev)
+        else am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, due.at, ev)
+        app.threshold.widget.NextWidget.update(ctx, s, now)
     }
 
     /** The chain: at [at] the portal leads on to step [index] of the morning. */

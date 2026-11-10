@@ -53,6 +53,7 @@ enum class Glyph(val d: String) {
     TRASH("M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14"),
     LINK("M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"),
     APP("M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"),
+    FILE("M6 3h8l4 4v14H6zM14 3v4h4M10 17.5a1.5 1.5 0 1 1 .01 0M11.5 17.5V11l3 1"),
     RADIO("M4 9h16v11H4zM8 9l9-5M8 14.5a2 2 0 1 0 .01 0M14 13h3M14 16h3"),
     MOON("M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"),
     CHECK("M5 12.5l4.5 4.5L19 7"),

@@ -2,4 +2,5 @@
 <resources>
     <color name="window">#0A0912</color>
     <color name="gold">#E8C27A</color>
+    <color name="widget_line">#2E2945</color>
 </resources>

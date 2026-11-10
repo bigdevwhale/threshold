@@ -98,6 +98,37 @@ class WeekTest {
         assertEquals(World.CINEMA, Portal.guess(Step(Kind.LINK, "", url = "https://hd.kinopoisk.ru/film/1")))
         assertEquals(World.MUSIC, Portal.guess(Step(Kind.LINK, "", url = "https://music.yandex.ru/album/1")))
         assertEquals(World.RADIO, Portal.guess(Step(Kind.RADIO, "Jazz", url = "https://x/stream")))
+        assertEquals(World.GARDEN, Portal.guess(Step(Kind.LINK, "YouTube · Аудиокнига «Мастер и Маргарита»", url = "https://youtu.be/abc")))
+        assertEquals(World.SPORT, Portal.guess(Step(Kind.LINK, "YouTube · Йога утром", url = "https://youtu.be/abc")))
+        // A bare video says nothing about its world: no guess, rather than «news».
+        assertNull(Portal.guess(Step(Kind.LINK, "YouTube", url = "https://youtu.be/abc")))
+    }
+
+    // Issue #3: a world chosen by hand stayed only until the first step was added.
+    @Test fun aPickedWorldStays() {
+        val yoga = Step(Kind.LINK, "YouTube", url = "https://youtu.be/abc")
+        val book = Step(Kind.LINK, "YouTube · Аудиокнига", url = "https://youtu.be/abc")
+        val picked = app.threshold.data.Day(world = World.GARDEN, picked = true)
+        assertEquals(World.GARDEN, Portal.place(picked, Step(Kind.LINK, "YouTube · Новости", url = "https://youtu.be/x")).world)
+        // Not picked: a telling first step chooses, a bare one leaves the world as it was.
+        val fresh = app.threshold.data.Day(world = World.CINEMA)
+        assertEquals(World.GARDEN, Portal.place(fresh, book).world)
+        assertEquals(World.CINEMA, Portal.place(fresh, yoga).world)
+        assertEquals(1, Portal.place(fresh, yoga).steps.size)
+    }
+
+    @Test fun eventsComeInOrderAndIgnoreTheMorningsDaysOff() {
+        val read = app.threshold.data.Event(1, setOf(0, 1, 2, 3, 4, 5, 6), 20, 0, Step(Kind.APP, "Books", "ru.yandex.books"))
+        val fast = app.threshold.data.Event(2, setOf(5), 6, 0, Step(Kind.APP, "Ember", "x.ember"))
+        val off = app.threshold.data.Event(3, setOf(5), 7, 0, Step(Kind.APP, "Off"), on = false)
+        // Friday 6 Nov 2026, 21:00, with a vacation over the weekend.
+        val s = State(events = listOf(read, fast, off), vacFrom = day(2026, 11, 7), vacTo = day(2026, 11, 8))
+        val up = Week.upcoming(s, Week.at(day(2026, 11, 6), 21, 0), 3)
+        assertEquals(listOf(2L, 1L, 1L), up.map { it.event.id })
+        assertEquals(Week.at(day(2026, 11, 7), 6, 0), up[0].at)
+        assertEquals(Week.at(day(2026, 11, 7), 20, 0), up[1].at)
+        assertEquals(listOf(fast, off), Week.events(s, 5).filter { it.id != 1L })
+        assertTrue(Week.upcoming(State(), 0).isEmpty())
     }
 }
 
@@ -115,6 +146,13 @@ class StoreTest {
         assertEquals(s.visits, back.visits)
         assertEquals(s.log, back.log)
         assertEquals(s.wishes, back.wishes)
+        val e = State(
+            events = listOf(app.threshold.data.Event(7, setOf(0, 4), 20, 30, Step(Kind.FILE, "Йога", "video/mp4", "content://x/1"), on = false)),
+            week = s.week.mapIndexed { i, d -> if (i == 2) d.copy(picked = true) else d },
+        )
+        val back2 = Json.read(Json.write(e))
+        assertEquals(e.events, back2.events)
+        assertEquals(e.week, back2.week)
         assertNotNull(back.log.firstOrNull())
     }
 }

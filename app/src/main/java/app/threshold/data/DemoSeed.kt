@@ -37,6 +37,10 @@ object DemoSeed {
             wishes = listOf(
                 Step(Kind.LINK, if (ru) "Альбом · Ronny Jordan" else "Album · Ronny Jordan", "", "https://music.yandex.ru/album/31155"),
                 Step(Kind.LINK, if (ru) "Фильм · Амели" else "Film · Amélie", "", "https://www.kinopoisk.ru/film/450/"),
+            ),
+            events = listOf(
+                Event(1, (0..4).toSet(), 19, 0, Step(Kind.LINK, if (ru) "YouTube · Йога для начинающих" else "YouTube · Yoga for beginners", "com.google.android.youtube", "https://www.youtube.com/results?search_query=yoga")),
+                Event(2, (0..6).toSet(), 23, 0, Step(Kind.APP, if (ru) "Яндекс Книги" else "Yandex Books", "ru.yandex.books")),
             ))
         val log = mutableListOf<Wake>()
         for (back in 60 downTo 1) {

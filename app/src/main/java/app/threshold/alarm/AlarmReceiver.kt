@@ -25,6 +25,19 @@ class AlarmReceiver : BroadcastReceiver() {
                             Scheduler.EVENING -> Notify.evening(ctx)
                             Scheduler.CLOSE -> { c.closeDay(now); Notify.cancel(ctx, Notify.ID_EVENING) }
                             Scheduler.NUDGE -> Notify.nudge(ctx)
+                            Scheduler.EVENT -> {
+                                val s = c.store.now()
+                                val at = intent.getLongExtra(Scheduler.EXTRA_AT, now)
+                                s.events.firstOrNull { it.id == intent.getLongExtra(Scheduler.EXTRA_ID, -1L) && it.on }?.let { e ->
+                                    // A late alarm (the phone was asleep for long) is still worth a note, a stale one isn't.
+                                    if (now - at < 3 * 60 * 60_000L) {
+                                        if (e.step.kind == Kind.RADIO) RingService.radio(ctx, e.step.url, e.step.label)
+                                        Notify.event(ctx, e, app.threshold.ui.Fmt.hm(e.h, e.m))
+                                    }
+                                }
+                                // Then the one after it; never this same one again.
+                                Scheduler.arm(ctx, s, maxOf(now, at) + 1)
+                            }
                             Scheduler.NEXT -> {
                                 val s = c.store.now()
                                 val i = intent.getIntExtra(Scheduler.EXTRA_INDEX, 1)

@@ -42,7 +42,7 @@ object Json {
     fun write(s: State): String = JSONObject().apply {
         put("week", JSONArray().also { a ->
             s.week.forEach { d ->
-                a.put(JSONObject().put("on", d.on).put("auto", d.auto).put("h", d.h).put("m", d.m).put("w", d.world.name)
+                a.put(JSONObject().put("on", d.on).put("auto", d.auto).put("wp", d.picked).put("h", d.h).put("m", d.m).put("w", d.world.name)
                     .put("s", JSONArray().also { st -> d.steps.forEach { st.put(step(it)) } }))
             }
         })
@@ -51,6 +51,11 @@ object Json {
         put("hol", s.holidays); put("off", JSONArray(s.offDays.sorted().takeLast(200))); put("vacFrom", s.vacFrom); put("vacTo", s.vacTo)
         put("eve", s.evening); put("nudge", s.nudgeMin); put("wild", s.wild)
         put("wishes", JSONArray().also { a -> s.wishes.forEach { a.put(step(it)) } })
+        put("ev", JSONArray().also { a ->
+            s.events.forEach { e ->
+                a.put(JSONObject().put("id", e.id).put("d", JSONArray(e.days.sorted())).put("h", e.h).put("m", e.m).put("on", e.on).put("s", step(e.step)))
+            }
+        })
         put("visits", JSONObject().also { o -> s.visits.forEach { (k, v) -> o.put(k.name, v) } })
         put("finds", JSONObject().also { o -> s.finds.forEach { (k, v) -> o.put(k, v) } })
         put("log", JSONArray().also { a ->
@@ -70,7 +75,7 @@ object Json {
                 val d = a.getJSONObject(i)
                 Day(d.optBoolean("on", true), d.optInt("h", 7), d.optInt("m"), world(d.optString("w")),
                     d.optJSONArray("s")?.let { st -> (0 until st.length()).map { step(st.getJSONObject(it)) } } ?: emptyList(),
-                    d.optBoolean("auto"))
+                    d.optBoolean("auto"), d.optBoolean("wp"))
             }
         }?.takeIf { it.size == 7 } ?: Defaults.week
         val log = o.optJSONArray("log")?.let { a ->
@@ -92,6 +97,14 @@ object Json {
             vacFrom = o.optLong("vacFrom", -1), vacTo = o.optLong("vacTo", -1),
             evening = o.optBoolean("eve", true), nudgeMin = o.optInt("nudge"), wild = o.optBoolean("wild"),
             wishes = o.optJSONArray("wishes")?.let { a -> (0 until a.length()).map { step(a.getJSONObject(it)) } } ?: emptyList(),
+            events = o.optJSONArray("ev")?.let { a ->
+                (0 until a.length()).mapNotNull { i ->
+                    val e = a.getJSONObject(i)
+                    val s = e.optJSONObject("s") ?: return@mapNotNull null
+                    Event(e.getLong("id"), e.optJSONArray("d")?.let { d -> (0 until d.length()).map { d.getInt(it) }.filter { it in 0..6 }.toSet() } ?: emptySet(),
+                        e.optInt("h"), e.optInt("m"), step(s), e.optBoolean("on", true))
+                }
+            } ?: emptyList(),
             visits = o.optJSONObject("visits")?.let { v -> v.keys().asSequence().mapNotNull { k -> World.entries.firstOrNull { it.name == k }?.let { it to v.getInt(k) } }.toMap() } ?: emptyMap(),
             finds = o.optJSONObject("finds")?.let { v -> v.keys().asSequence().associateWith { v.getInt(it) } } ?: emptyMap(),
             log = log,

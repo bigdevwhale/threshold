@@ -70,6 +70,11 @@ object Launch {
 
     fun intent(ctx: Context, step: Step): Intent? = when (step.kind) {
         Kind.RADIO -> null
+        // A file picked from the phone: the app keeps a lasting right to read it and lends it to the player.
+        Kind.FILE -> runCatching { Uri.parse(step.url) }.getOrNull()?.takeIf { step.url.isNotBlank() }?.let { uri ->
+            val type = runCatching { ctx.contentResolver.getType(uri) }.getOrNull() ?: step.pkg.ifBlank { "*/*" }
+            Intent(Intent.ACTION_VIEW).setDataAndType(uri, type).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
         Kind.APP -> ctx.packageManager.getLaunchIntentForPackage(step.pkg)
         Kind.LINK -> {
             val uri = runCatching { Uri.parse(normalize(step.url)) }.getOrNull()
