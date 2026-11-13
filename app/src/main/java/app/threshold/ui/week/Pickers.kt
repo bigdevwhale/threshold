@@ -97,8 +97,18 @@ private fun clip(ctx: Context): String =
 
 private val urlRe = Regex("""https?://\S+""")
 
-/** The first web address in a piece of shared text. */
-fun firstUrl(text: String): String? = urlRe.find(text)?.value?.trimEnd('.', ',', ')', '»', '"')
+/** A bare address with no scheme: «music.yandex.ru/album/1», «youtu.be/xyz». */
+private val bareRe = Regex("""^(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,}(?:[/?#]\S*)?$""")
+
+/**
+ * The first web address in a piece of shared text. An address pasted or typed without http(s):// counts too and gets
+ * https:// in front, when it is the whole text (#4: such a link used to be silently ignored).
+ */
+fun firstUrl(text: String): String? {
+    urlRe.find(text)?.value?.trimEnd('.', ',', ')', '»', '"')?.let { return it }
+    val t = text.trim().trimEnd('.', ',', ')', '»', '"')
+    return if (bareRe.matches(t)) "https://$t" else null
+}
 
 /** A name for a link from where it goes, until the user gives a better one. */
 fun guessLabel(url: String): String {
@@ -124,7 +134,9 @@ fun LinkPicker(was: Step?, onClose: () -> Unit, onPick: (Step) -> Unit) {
         Text(stringResource(R.string.pick_link_b), style = T.sub, modifier = Modifier.padding(bottom = 12.dp))
         Field(url, { url = it; if (label.isBlank() || label == guessLabel(url.dropLast(1))) label = firstUrl(it)?.let(::guessLabel).orEmpty() }, stringResource(R.string.pick_url), url = true)
         Btn(stringResource(R.string.pick_paste), Modifier.fillMaxWidth()) {
-            firstUrl(clip(ctx))?.let { u -> url = u; if (label.isBlank()) label = guessLabel(u) }
+            val u = firstUrl(clip(ctx))
+            if (u == null) android.widget.Toast.makeText(ctx, R.string.pick_paste_none, android.widget.Toast.LENGTH_SHORT).show()
+            else { url = u; if (label.isBlank()) label = guessLabel(u) }
         }
         Spacer(Modifier.height(12.dp))
         Field(label, { label = it }, stringResource(R.string.pick_label))

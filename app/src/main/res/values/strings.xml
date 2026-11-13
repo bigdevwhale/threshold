@@ -239,4 +239,5 @@
     <string name="community_chat">StillCraft chat</string>
     <string name="community_support">Support Threshold</string>
     <string name="community_support_sub">for new worlds behind the portal</string>
+    <string name="pick_paste_none">There is no link in the clipboard. Copy it in the app with «Share» → «Copy link».</string>
 </resources>

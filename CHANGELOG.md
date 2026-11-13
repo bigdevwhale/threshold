@@ -6,6 +6,16 @@ line "<!-- tg", then 2-4 short lines in Russian for users (what is new, what is 
 then close it like any HTML comment. The release notes carry it, and the chat bot posts those lines.
 -->
 
+## [1.1.1] - 2026-11-13
+
+### Fixed
+- A link without http(s):// in front («music.yandex.ru/album/…», «youtu.be/…») was silently ignored: "Paste from clipboard" did nothing and Save stayed off (#4). Such an address now counts and gets https:// added, in the link and radio forms and when shared to the app.
+- "Paste from clipboard" says so when the clipboard holds no link, instead of doing nothing.
+
+<!-- tg
+Исправлено: ссылки без https:// в начале (например, music.yandex.ru/…) теперь принимаются – раньше «Вставить из буфера» молча ничего не делала.
+-->
+
 ## [1.1.0]
 
 - Events through the day: besides the morning, any number of events at their own times on the days you choose. A notification comes on time and a tap opens the app, link or file; a radio starts by itself. They don't depend on the morning alarm.

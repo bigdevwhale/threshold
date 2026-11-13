@@ -239,4 +239,5 @@
     <string name="community_chat">Чат StillCraft</string>
     <string name="community_support">Поддержать «Порог»</string>
     <string name="community_support_sub">на новые миры за порталом</string>
+    <string name="pick_paste_none">В буфере нет ссылки. Скопируйте её в приложении: «Поделиться» → «Копировать ссылку».</string>
 </resources>
